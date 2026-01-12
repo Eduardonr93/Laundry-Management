@@ -1,0 +1,937 @@
+
+<!-- Login Screen (if not logged in) -->
+@if (!isLoggedIn()) {
+  <div class="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+    <div class="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white">
+          <i class="fas fa-layer-group fa-2x"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-800">Bienvenido</h1>
+        <p class="text-slate-500">Sistema de Gestión de Lavanderías</p>
+      </div>
+
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Selecciona tu Empresa</label>
+          <div class="space-y-3">
+            @for (company of availableCompanies(); track company.id) {
+              <div (click)="selectCompany(company.id)"
+                   class="relative flex items-center p-4 border rounded-lg cursor-pointer transition-all"
+                   [class]="loginForm().companyId === company.id ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-indigo-300'">
+                 <div class="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-indigo-600 mr-4">
+                   <i class="fas {{company.icon}}"></i>
+                 </div>
+                 <div class="flex-1">
+                   <h3 class="font-semibold text-slate-900">{{ company.name }}</h3>
+                   <p class="text-xs text-slate-500">ID: {{ company.id }}</p>
+                 </div>
+                 @if (loginForm().companyId === company.id) {
+                   <i class="fas fa-check-circle text-indigo-600"></i>
+                 }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Rol de Usuario</label>
+          <select [ngModel]="loginForm().role" (ngModelChange)="selectRole($event)"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+             <option value="admin">Administrador (Acceso Total)</option>
+             <option value="employee">Empleado (Limitado)</option>
+          </select>
+        </div>
+
+        <button (click)="performLogin()"
+                [disabled]="!loginForm().companyId"
+                class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+           Ingresar
+        </button>
+      </div>
+    </div>
+  </div>
+} @else {
+  <!-- Authenticated View -->
+  <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+    <main class="bg-white rounded-2xl shadow-xl">
+      <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-6 border-b border-slate-200">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+            <i class="fas {{ currentCompany()?.icon }} fa-lg"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-slate-800">{{ currentCompany()?.name }}</h1>
+            <p class="text-slate-500 text-sm">Panel de {{ isAdmin() ? 'Administración' : 'Control' }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 mt-4 sm:mt-0">
+          <nav class="flex space-x-1 bg-slate-100 p-1 rounded-lg">
+            <button (click)="setView('dashboard')"
+                    [class]="activeView() === 'dashboard' ? 'bg-white text-indigo-600 shadow' : 'text-slate-600 hover:bg-slate-200'"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-all">
+              <i class="fas fa-chart-pie fa-fw mr-1"></i> Dashboard
+            </button>
+            <button (click)="setView('orders')"
+                    [class]="activeView() === 'orders' ? 'bg-white text-indigo-600 shadow' : 'text-slate-600 hover:bg-slate-200'"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-all">
+              <i class="fas fa-receipt fa-fw mr-1"></i> Pedidos
+            </button>
+            <button (click)="setView('clients')"
+                    [class]="activeView() === 'clients' ? 'bg-white text-indigo-600 shadow' : 'text-slate-600 hover:bg-slate-200'"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-all">
+              <i class="fas fa-users fa-fw mr-1"></i> Clientes
+            </button>
+            @if(isAdmin()) {
+            <button (click)="setView('services')"
+                    [class]="activeView() === 'services' ? 'bg-white text-indigo-600 shadow' : 'text-slate-600 hover:bg-slate-200'"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-all">
+              <i class="fas fa-tshirt fa-fw mr-1"></i> Servicios
+            </button>
+            }
+            <button (click)="setView('machines')"
+                    [class]="activeView() === 'machines' ? 'bg-white text-indigo-600 shadow' : 'text-slate-600 hover:bg-slate-200'"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-all">
+              <i class="fas fa-cogs fa-fw mr-1"></i> Máquinas
+            </button>
+            @if(isAdmin()) {
+            <button (click)="setView('configuracion')"
+                    [class]="activeView() === 'configuracion' ? 'bg-white text-indigo-600 shadow' : 'text-slate-600 hover:bg-slate-200'"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-all">
+              <i class="fas fa-sliders-h fa-fw mr-1"></i> Configuración
+            </button>
+            }
+          </nav>
+          <div class="w-px h-8 bg-slate-200 mx-2"></div>
+          <!-- User Role Dropdown -->
+          <div class="relative">
+            <button (click)="showUserMenu.set(!showUserMenu())" class="flex items-center gap-2 text-left hover:bg-slate-100 p-2 rounded-lg">
+              @if (currentUserRole() === 'admin') {
+                <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <i class="fas fa-user-shield"></i>
+                </div>
+              } @else {
+                <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center">
+                  <i class="fas fa-user-cog"></i>
+                </div>
+              }
+              <div>
+                <p class="font-semibold text-sm text-slate-800 capitalize">{{ currentUserRole() === 'admin' ? 'Admin' : 'Empleado' }}</p>
+                <p class="text-xs text-slate-500">Opciones</p>
+              </div>
+              <i class="fas fa-chevron-down text-slate-400 text-xs ml-1"></i>
+            </button>
+            @if (showUserMenu()) {
+            <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-slate-100" (click)="showUserMenu.set(false)">
+              <div class="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Cambiar Rol</div>
+              <a (click)="changeRole('admin')" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer">
+                <i class="fas fa-user-shield fa-fw text-indigo-500"></i> Administrador
+              </a>
+              <a (click)="changeRole('employee')" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer">
+                <i class="fas fa-user-cog fa-fw text-slate-500"></i> Empleado
+              </a>
+              <div class="border-t border-slate-100 my-1"></div>
+              <a (click)="performLogout()" class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer">
+                <i class="fas fa-sign-out-alt fa-fw"></i> Cerrar Sesión
+              </a>
+            </div>
+            }
+          </div>
+        </div>
+      </header>
+
+      <div class="p-6 sm:p-8 min-h-[400px]">
+        @if(isLoading()) {
+          <div class="flex items-center justify-center h-64">
+            <div class="flex items-center gap-3 text-slate-500">
+              <i class="fas fa-spinner fa-spin fa-2x"></i>
+              <span class="text-lg">Cargando datos...</span>
+            </div>
+          </div>
+        } @else if(errorMessage()) {
+          <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-red-400"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-red-700">
+                  {{ errorMessage() }}
+                </p>
+              </div>
+            </div>
+          </div>
+        } @else {
+          @if(activeView() === 'dashboard') {
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Resumen del Negocio</h2>
+                @let stats = dashboardStats();
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Total Revenue Card -->
+                    <div class="bg-green-50 border-l-4 border-green-500 rounded-r-lg p-5 shadow-sm">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-green-100 rounded-full w-12 h-12 flex items-center justify-center">
+                                <i class="fas fa-dollar-sign fa-lg text-green-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-slate-500">Ingresos ({{currentCompany()?.name}})</div>
+                                <div class="text-2xl font-bold text-slate-800">${{ stats.totalRevenue.toFixed(2) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Active Orders Card -->
+                    <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-5 shadow-sm">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center">
+                                <i class="fas fa-sync-alt fa-lg text-blue-600 fa-spin"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-slate-500">Pedidos Activos</div>
+                                <div class="text-2xl font-bold text-slate-800">{{ stats.activeOrders }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Pending Orders Card -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg p-5 shadow-sm">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-yellow-100 rounded-full w-12 h-12 flex items-center justify-center">
+                                <i class="fas fa-hourglass-half fa-lg text-yellow-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-slate-500">Pedidos Pendientes</div>
+                                <div class="text-2xl font-bold text-slate-800">{{ stats.pendingOrders }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Available Machines Card -->
+                    <div class="bg-indigo-50 border-l-4 border-indigo-500 rounded-r-lg p-5 shadow-sm">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-indigo-100 rounded-full w-12 h-12 flex items-center justify-center">
+                                <i class="fas fa-check-circle fa-lg text-indigo-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-slate-500">Máquinas Disponibles</div>
+                                <div class="text-2xl font-bold text-slate-800">{{ stats.availableMachines }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+              <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+                  <h3 class="text-lg font-semibold text-slate-800 mb-4">Distribución de Estados</h3>
+                  <div #pieChartContainer></div>
+              </div>
+              <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
+                  <h3 class="text-lg font-semibold text-slate-800 mb-4">Clientes Frecuentes</h3>
+                  <div #barChartContainer></div>
+              </div>
+            </div>
+
+          } @else if (activeView() === 'orders') {
+            <!-- Orders View Content (Same as before) -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+              <h2 class="text-2xl font-bold text-slate-800 mb-3 sm:mb-0">Gestión de Pedidos</h2>
+              <button (click)="openNewOrderModal()" class="flex items-center gap-2 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200">
+                <i class="fas fa-plus-circle"></i>
+                <span>Nuevo Pedido</span>
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left table-auto">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-sm font-medium">
+                  <tr>
+                    <th class="px-6 py-4">ID</th>
+                    <th class="px-6 py-4">Cliente</th>
+                    <th class="px-6 py-4">Tipo</th>
+                    <th class="px-6 py-4">Servicios</th>
+                    <th class="px-6 py-4 text-center">Estado</th>
+                    <th class="px-6 py-4 text-right">Total</th>
+                    <th class="px-6 py-4 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-700">
+                  @for (order of displayOrders(); track order.id) {
+                    <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors" [class.new-order-highlight]="order.id === recentlyAddedOrderId()">
+                      <td class="px-6 py-4 font-mono text-slate-500">#{{ order.id }}</td>
+                      <td class="px-6 py-4 font-semibold">{{ getClientName(order.clientId) }}</td>
+                      <td class="px-6 py-4">
+                        @if (order.orderType === 'dejar_y_recoger') {
+                          <span class="flex items-center gap-2 text-sm text-blue-800">
+                            <i class="fas fa-shopping-bag fa-fw text-blue-500"></i>
+                            <span>Dejar y Recoger</span>
+                          </span>
+                        } @else {
+                          <span class="flex items-center gap-2 text-sm text-green-800">
+                            <i class="fas fa-hand-sparkles fa-fw text-green-500"></i>
+                            <span>Autolavado</span>
+                          </span>
+                        }
+                      </td>
+                      <td class="px-6 py-4 text-slate-600 text-sm">{{ getServiceDetailsForDisplay(order.services) }}</td>
+                      <td class="px-6 py-4 text-center">
+                        <span (click)="cycleStatus(order)" [class]="'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold cursor-pointer ' + getStatusClasses(order.status)">
+                          {{ order.status }}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-right font-semibold">${{ order.total.toFixed(2) }}</td>
+                      <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center gap-4">
+                          <button (click)="openEditOrderModal(order)" class="text-slate-500 hover:text-indigo-600 transition-colors" aria-label="Editar">
+                            <i class="fas fa-pencil-alt fa-fw"></i>
+                          </button>
+                          @if (isAdmin()) {
+                          <button (click)="deleteOrder(order.id)" class="text-slate-500 hover:text-red-600 transition-colors" aria-label="Eliminar">
+                            <i class="fas fa-trash-alt fa-fw"></i>
+                          </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="7" class="text-center py-12 text-slate-500">
+                        <i class="fas fa-box-open fa-3x mb-4 text-slate-400"></i>
+                        <p>No hay pedidos para mostrar.</p>
+                        <p class="text-sm">Crea un nuevo pedido para empezar.</p>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else if (activeView() === 'clients') {
+            <!-- Clients View Content -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+              <h2 class="text-2xl font-bold text-slate-800 mb-3 sm:mb-0">Gestión de Clientes</h2>
+              <button (click)="openNewClientModal()" class="flex items-center gap-2 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200">
+                <i class="fas fa-user-plus"></i>
+                <span>Nuevo Cliente</span>
+              </button>
+            </div>
+            <div class="overflow-x-auto bg-white rounded-lg shadow">
+              <table class="w-full text-left table-auto">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-sm font-medium">
+                  <tr>
+                    <th class="px-6 py-3">Nombre</th>
+                    <th class="px-6 py-3">Teléfono</th>
+                    <th class="px-6 py-3">Email</th>
+                    <th class="px-6 py-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-700 divide-y divide-slate-200">
+                  @for (client of clients(); track client.id) {
+                    <tr class="hover:bg-slate-50">
+                      <td class="px-6 py-4 font-semibold">{{ client.name }}</td>
+                      <td class="px-6 py-4">{{ client.phone }}</td>
+                      <td class="px-6 py-4">{{ client.email }}</td>
+                      <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center gap-4">
+                          <button (click)="openEditClientModal(client)" class="text-slate-500 hover:text-indigo-600 transition-colors" aria-label="Editar">
+                            <i class="fas fa-pencil-alt fa-fw"></i>
+                          </button>
+                          @if (isAdmin()) {
+                          <button (click)="deleteClient(client.id)" class="text-slate-500 hover:text-red-600 transition-colors" aria-label="Eliminar">
+                            <i class="fas fa-trash-alt fa-fw"></i>
+                          </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="text-center py-12 text-slate-500">
+                        <i class="fas fa-users-slash fa-3x mb-4 text-slate-400"></i>
+                        <p>No hay clientes registrados.</p>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else if (activeView() === 'services' && isAdmin()) {
+            <!-- Services View Content -->
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Nuestros Servicios</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              @for (service of services(); track service.id) {
+                <div class="bg-slate-50 rounded-lg p-6 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300">
+                  <div class="flex items-center gap-4 mb-3">
+                    <div class="bg-indigo-100 text-indigo-600 rounded-full w-12 h-12 flex items-center justify-center">
+                      <i class="fas {{service.icon}} fa-lg"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-bold text-lg text-slate-800">{{ service.name }}</h3>
+                      <p class="font-semibold text-indigo-500">${{ service.price.toFixed(2) }} {{ getUnitLabel(service.pricingMethod) }}</p>
+                    </div>
+                  </div>
+                  <p class="text-slate-600 text-sm">{{ service.description }}</p>
+                </div>
+              } @empty {
+                <div class="col-span-full text-center py-12 text-slate-500">
+                    <i class="fas fa-box-open fa-3x mb-4 text-slate-400"></i>
+                    <p>No se encontraron servicios.</p>
+                </div>
+              }
+            </div>
+          } @else if (activeView() === 'machines') {
+            <!-- Machines View Content -->
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Estado de Máquinas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              @for(machine of activeMachines(); track machine.id) {
+                  @let statusClasses = getMachineStatusClasses(machine.status);
+                  <div class="rounded-lg p-5 shadow-sm border-t-4 flex flex-col justify-between transition-all duration-300 {{ statusClasses.border }} {{ statusClasses.bg }}" [class.machine-finished-pulse]="machine.id === justFinishedMachineId()">
+                      <div>
+                          <div class="flex justify-between items-start mb-4">
+                              <div class="flex items-center gap-3">
+                                  <div class="rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 {{ statusClasses.iconBg }} {{ statusClasses.iconText }}">
+                                      @if(machine.type === 'washer') {
+                                          <i class="fas fa-jug-detergent fa-lg"></i>
+                                      } @else {
+                                          <i class="fas fa-temperature-high fa-lg"></i>
+                                      }
+                                  </div>
+                                  <div>
+                                      <h3 class="font-bold text-lg text-slate-800">{{ machine.name }}</h3>
+                                      <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold {{ statusClasses.badge }}">{{ machine.status }}</span>
+                                  </div>
+                              </div>
+                          </div>
+
+                          @if(machine.status === 'En Uso') {
+                              <div class="text-center my-4">
+                                  <p class="text-slate-500 text-sm mb-1">Tiempo restante</p>
+                                  <p class="text-4xl font-mono font-bold text-slate-800 tracking-wider">{{ formatTime(machine.timer) }}</p>
+                              </div>
+                          } @else {
+                              <div class="text-center my-4 h-[60px] flex items-center justify-center">
+                                  <p class="text-slate-500 italic">Máquina inactiva</p>
+                              </div>
+                          }
+                      </div>
+
+                      <div class="pt-4 border-t border-slate-200/80 mt-auto">
+                          @if(machine.status === 'Disponible') {
+                            <div class="flex gap-2">
+                                  <button (click)="startCycle(machine)" class="w-full flex-1 text-center bg-indigo-600 text-white font-semibold py-2 px-3 rounded-md shadow-sm hover:bg-indigo-700 transition-colors text-sm">
+                                      <i class="fas fa-play mr-1"></i> Iniciar
+                                  </button>
+                                  @if(isAdmin()) {
+                                  <button (click)="setForMaintenance(machine)" class="w-auto bg-amber-100 text-amber-700 font-semibold py-2 px-3 rounded-md hover:bg-amber-200 transition-colors text-sm" aria-label="Poner en Mantenimiento">
+                                      <i class="fas fa-wrench"></i>
+                                  </button>
+                                  <button (click)="reportAsBroken(machine)" class="w-auto bg-red-100 text-red-700 font-semibold py-2 px-3 rounded-md hover:bg-red-200 transition-colors text-sm" aria-label="Reportar como Averiada">
+                                      <i class="fas fa-exclamation-triangle"></i>
+                                  </button>
+                                  }
+                              </div>
+                          }
+                          @if(machine.status === 'En Uso') {
+                            <div class="flex gap-2">
+                                  <button (click)="stopCycle(machine)" class="w-full flex-1 text-center bg-red-600 text-white font-semibold py-2 px-3 rounded-md shadow-sm hover:bg-red-700 transition-colors text-sm">
+                                      <i class="fas fa-stop mr-1"></i> Detener
+                                  </button>
+                                  @if(isAdmin()){
+                                  <button (click)="reportAsBroken(machine)" class="w-auto bg-red-100 text-red-700 font-semibold py-2 px-3 rounded-md hover:bg-red-200 transition-colors text-sm" aria-label="Reportar como Averiada">
+                                      <i class="fas fa-exclamation-triangle"></i>
+                                  </button>
+                                  }
+                              </div>
+                          }
+                          @if(isAdmin() && (machine.status === 'Mantenimiento' || machine.status === 'Averiada')) {
+                              <button (click)="resolveMachine(machine)" class="w-full text-center bg-green-600 text-white font-semibold py-2 px-3 rounded-md shadow-sm hover:bg-green-700 transition-colors text-sm">
+                                  <i class="fas {{ machine.status === 'Averiada' ? 'fa-tools' : 'fa-check-circle' }} mr-1"></i> 
+                                  Marcar como {{ machine.status === 'Averiada' ? 'Reparada' : 'Disponible' }}
+                              </button>
+                          }
+                      </div>
+                  </div>
+              } @empty {
+                <div class="col-span-full text-center py-12 text-slate-500">
+                    <i class="fas fa-box-open fa-3x mb-4 text-slate-400"></i>
+                    <p>No hay máquinas activas para mostrar.</p>
+                </div>
+              }
+            </div>
+          } @else if (activeView() === 'configuracion' && isAdmin()) {
+            <!-- Config View Content -->
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Configuración del Sistema</h2>
+            
+            <!-- Company Settings -->
+            <div class="mb-12">
+              <h3 class="text-xl font-semibold text-slate-700 mb-4">Información de la Empresa</h3>
+              <div class="bg-white rounded-lg shadow p-6">
+                <form (ngSubmit)="saveCompanyConfig()" class="flex flex-col md:flex-row gap-6 items-end">
+                   <div class="flex-1 w-full">
+                      <label class="block text-sm font-medium text-slate-700 mb-1">Nombre del Negocio</label>
+                      <input type="text" name="companyName" [(ngModel)]="companyConfigForm().name" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                   </div>
+                   <div class="flex-1 w-full">
+                      <label class="block text-sm font-medium text-slate-700 mb-1">Icono (FontAwesome Class)</label>
+                      <div class="flex gap-2">
+                        <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-indigo-600">
+                           <i class="fas {{companyConfigForm().icon}}"></i>
+                        </div>
+                        <input type="text" name="companyIcon" [(ngModel)]="companyConfigForm().icon" class="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                      </div>
+                   </div>
+                   <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors shadow-sm">
+                      Guardar Cambios
+                   </button>
+                </form>
+              </div>
+            </div>
+
+            <div class="mb-12">
+              <h3 class="text-xl font-semibold text-slate-700 mb-4">Fuente de Datos</h3>
+              <div class="bg-white rounded-lg shadow p-6 flex justify-between items-center">
+                <div>
+                  <p class="font-medium text-slate-800">Modo de Operación</p>
+                  <p class="text-sm text-slate-500">
+                    @if (dataService.useMockData()) {
+                      Actualmente usando datos locales de prueba (mock). Los cambios no son permanentes.
+                    } @else {
+                      Conectado a la base de datos en línea. Los cambios son permanentes.
+                    }
+                  </p>
+                </div>
+                <div class="flex items-center gap-4">
+                  <span class="text-sm font-semibold" [class]="dataService.useMockData() ? 'text-amber-600' : 'text-green-600'">
+                    {{ dataService.useMockData() ? 'Local (Mock)' : 'En Línea (BD)' }}
+                  </span>
+                  <button (click)="toggleDataMode()" 
+                          class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          [class]="dataService.useMockData() ? 'bg-amber-400' : 'bg-green-500'">
+                    <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform" 
+                          [class]="dataService.useMockData() ? 'translate-x-1' : 'translate-x-6'"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-12">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-slate-700">Gestionar Servicios</h3>
+                <button (click)="openNewServiceModal()" class="flex items-center gap-2 bg-indigo-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all text-sm">
+                  <i class="fas fa-plus"></i> Añadir Servicio
+                </button>
+              </div>
+              <div class="overflow-x-auto bg-white rounded-lg shadow">
+                <table class="w-full text-left table-auto">
+                  <thead class="bg-slate-50 text-slate-600 uppercase text-sm font-medium">
+                    <tr>
+                      <th class="px-6 py-3">Nombre</th>
+                      <th class="px-6 py-3">Descripción</th>
+                      <th class="px-6 py-3">Precio</th>
+                      <th class="px-6 py-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-slate-700 divide-y divide-slate-200">
+                    @for(service of services(); track service.id) {
+                      <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 font-semibold flex items-center gap-3"><i class="fas {{service.icon}} text-indigo-500"></i> {{service.name}}</td>
+                        <td class="px-6 py-4 text-sm">{{service.description}}</td>
+                        <td class="px-6 py-4 font-mono">${{service.price.toFixed(2)}} {{getUnitLabel(service.pricingMethod)}}</td>
+                        <td class="px-6 py-4 text-center">
+                          <div class="flex justify-center items-center gap-4">
+                            <button (click)="openEditServiceModal(service)" class="text-slate-500 hover:text-indigo-600 transition-colors"><i class="fas fa-pencil-alt"></i></button>
+                            <button (click)="deleteService(service.id)" class="text-slate-500 hover:text-red-600 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                          </div>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="4" class="text-center py-8 text-slate-500">No hay servicios definidos en la base de datos.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-slate-700">Gestionar Máquinas</h3>
+                <button (click)="openNewMachineModal()" class="flex items-center gap-2 bg-indigo-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all text-sm">
+                  <i class="fas fa-plus"></i> Añadir Máquina
+                </button>
+              </div>
+               <div class="overflow-x-auto bg-white rounded-lg shadow">
+                <table class="w-full text-left table-auto">
+                  <thead class="bg-slate-50 text-slate-600 uppercase text-sm font-medium">
+                    <tr>
+                      <th class="px-6 py-3">Nombre</th>
+                      <th class="px-6 py-3">Tipo</th>
+                      <th class="px-6 py-3">Estado</th>
+                      <th class="px-6 py-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-slate-700 divide-y divide-slate-200">
+                    @for(machine of machines(); track machine.id) {
+                      <tr class="hover:bg-slate-50" [class.bg-slate-50]="!machine.isActive" [class.text-slate-400]="!machine.isActive">
+                        <td class="px-6 py-4 font-semibold">{{machine.name}}</td>
+                        <td class="px-6 py-4 capitalize">{{machine.type === 'washer' ? 'Lavadora' : 'Secadora'}}</td>
+                        <td class="px-6 py-4">
+                          @if(machine.isActive) {
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activa</span>
+                          } @else {
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactiva</span>
+                          }
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                          <div class="flex justify-center items-center gap-4">
+                            <button (click)="openEditMachineModal(machine)" class="text-slate-500 hover:text-indigo-600 transition-colors disabled:text-slate-300 disabled:cursor-not-allowed" [disabled]="!machine.isActive" title="Editar">
+                              <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            @if (machine.isActive) {
+                              <button (click)="deactivateMachine(machine)" class="text-green-500 hover:text-red-600 transition-colors" title="Desactivar">
+                                <i class="fas fa-toggle-on fa-lg"></i>
+                              </button>
+                            } @else {
+                              <button (click)="reactivateMachine(machine)" class="text-slate-400 hover:text-green-500 transition-colors" title="Reactivar">
+                                <i class="fas fa-toggle-off fa-lg"></i>
+                              </button>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="4" class="text-center py-8 text-slate-500">No hay máquinas definidas en la base de datos.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          }
+        }
+      </div>
+    </main>
+  </div>
+}
+
+<!-- Modals (Order, Client, Service, Machine) - Keeping same structure just ensuring they are outside the @else block or inside as needed. 
+     Since they are global modals, I will put them outside the login check but guard their visibility with signals which are false by default. 
+     Wait, if not logged in, signals are false, so it's fine. -->
+
+@if (isLoggedIn()) {
+  <!-- Order Modal -->
+  @if (showOrderModal()) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity" (click)="closeOrderModal()"></div>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl transform transition-all">
+        <div class="flex justify-between items-center p-5 border-b border-slate-200">
+          <h3 class="text-xl font-semibold text-slate-800">{{ orderModalTitle() }}</h3>
+          <button (click)="closeOrderModal()" class="text-slate-400 hover:text-slate-600" aria-label="Cerrar modal">
+            <i class="fas fa-times fa-lg"></i>
+          </button>
+        </div>
+        <form (ngSubmit)="saveOrder()" #orderForm="ngForm">
+          <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            
+            <!-- Order Type Selector -->
+            <div class="p-1 bg-slate-100 rounded-lg flex gap-1">
+              <button type="button" 
+                      (click)="setOrderTypeInModal('dejar_y_recoger')"
+                      [disabled]="isEditingOrder()"
+                      class="flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-2"
+                      [class]="currentOrderForm().orderType === 'dejar_y_recoger' ? 'bg-white text-indigo-600 shadow' : 'bg-transparent text-slate-600 hover:bg-slate-200 disabled:bg-transparent disabled:text-slate-400'">
+                <i class="fas fa-shopping-bag"></i> Dejar y Recoger
+              </button>
+              <button type="button" 
+                      (click)="setOrderTypeInModal('autolavado')"
+                      [disabled]="isEditingOrder()"
+                      class="flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-2"
+                      [class]="currentOrderForm().orderType === 'autolavado' ? 'bg-white text-indigo-600 shadow' : 'bg-transparent text-slate-600 hover:bg-slate-200 disabled:bg-transparent disabled:text-slate-400'">
+                 <i class="fas fa-hand-sparkles"></i> Autolavado
+              </button>
+            </div>
+
+            <!-- Client Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="client" class="block text-sm font-medium text-slate-700 mb-1">Cliente</label>
+                <select id="client" name="client" 
+                        [ngModel]="selectedClientIdInOrderForm()"
+                        (ngModelChange)="onClientSelectionChange($event)"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                  <option [value]="0" disabled>-- Seleccione un cliente --</option>
+                  @for(client of clients(); track client.id) {
+                    <option [value]="client.id">{{ client.name }}</option>
+                  }
+                  <option [value]="-1" class="font-bold text-indigo-600">-- Crear nuevo cliente --</option>
+                </select>
+              </div>
+              @if (selectedClientIdInOrderForm() === -1) {
+                <div class="p-4 border border-indigo-200 rounded-md bg-indigo-50 space-y-3 md:col-span-2">
+                  <h4 class="font-semibold text-sm text-indigo-800">Datos del Nuevo Cliente</h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div>
+                      <label for="newClientName" class="block text-xs font-medium text-slate-700 mb-1">Nombre Completo</label>
+                      <input type="text" id="newClientName" name="newClientName" required [(ngModel)]="newClientInOrderForm().name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                    </div>
+                    <div>
+                      <label for="newClientPhone" class="block text-xs font-medium text-slate-700 mb-1">Teléfono</label>
+                      <input type="tel" id="newClientPhone" name="newClientPhone" required [(ngModel)]="newClientInOrderForm().phone" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                    </div>
+                     <div class="sm:col-span-2">
+                      <label for="newClientEmail" class="block text-xs font-medium text-slate-700 mb-1">Email</label>
+                      <input type="email" id="newClientEmail" name="newClientEmail" [(ngModel)]="newClientInOrderForm().email" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Services Selection -->
+            @if (currentOrderForm().orderType === 'dejar_y_recoger') {
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Servicios</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  @for(service of dropOffServices(); track service.id) {
+                    @let isSelected = selectedServicesInOrderForm()[service.id] > 0;
+                    <div (click)="!isEditingOrder() && toggleServiceSelection(service.id)"
+                        class="relative rounded-lg p-3 border-2 transition-all duration-200"
+                        [class]="isEditingOrder() ? 'cursor-default' : 'cursor-pointer'"
+                        [class]="isSelected ? 'bg-indigo-50 border-indigo-500' : 'bg-white border-slate-200 hover:border-indigo-400'">
+                        @if (isSelected) {
+                            <div class="absolute top-2 right-2 bg-indigo-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                <i class="fas fa-check fa-xs"></i>
+                            </div>
+                        }
+                        <div class="flex flex-col h-full">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fas {{service.icon}} fa-lg" [class]="isSelected ? 'text-indigo-600' : 'text-slate-500'"></i>
+                                <h4 class="font-semibold text-sm text-slate-800">{{ service.name }}</h4>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2 flex-grow">${{ service.price.toFixed(2) }} {{ getUnitLabel(service.pricingMethod) }}</p>
+                            @if (isSelected && service.pricingMethod !== 'fixed') {
+                                <div class="mt-auto pt-2 border-t border-slate-200" (click)="$event.stopPropagation()">
+                                    <label class="text-xs font-medium text-slate-600 mr-2">{{ getQuantityLabel(service.pricingMethod) }}</label>
+                                    <input type="number" min="1" [step]="service.pricingMethod === 'per_kg' ? '0.1' : '1'"
+                                          [value]="selectedServicesInOrderForm()[service.id]"
+                                          (input)="updateServiceQuantity(service.id, $event)"
+                                          [disabled]="isEditingOrder()"
+                                          class="w-full px-2 py-1 text-sm border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-100">
+                                </div>
+                            }
+                        </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="space-y-4">
+                <!-- Washers -->
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">Lavadoras Disponibles</label>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    @for(machine of availableWashers(); track machine.id) {
+                      @let isSelected = selectedMachinesInForm().includes(machine.id);
+                      <button type="button" (click)="toggleMachineSelection(machine.id)"
+                              [disabled]="isEditingOrder()"
+                              class="text-left p-3 border-2 rounded-lg transition-all"
+                              [class]="isSelected ? 'bg-green-50 border-green-500' : 'bg-white border-slate-200 hover:border-green-400 disabled:hover:border-slate-200'">
+                          <div class="flex items-center gap-2">
+                              <i class="fas fa-jug-detergent" [class]="isSelected ? 'text-green-600' : 'text-slate-500'"></i>
+                              <span class="font-semibold text-sm">{{machine.name}}</span>
+                          </div>
+                      </button>
+                    } @empty { <p class="text-sm text-slate-500 italic col-span-full">No hay lavadoras disponibles.</p> }
+                  </div>
+                </div>
+                <!-- Dryers -->
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">Secadoras Disponibles</label>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    @for(machine of availableDryers(); track machine.id) {
+                      @let isSelected = selectedMachinesInForm().includes(machine.id);
+                      <button type="button" (click)="toggleMachineSelection(machine.id)"
+                              [disabled]="isEditingOrder()"
+                              class="text-left p-3 border-2 rounded-lg transition-all"
+                              [class]="isSelected ? 'bg-green-50 border-green-500' : 'bg-white border-slate-200 hover:border-green-400 disabled:hover:border-slate-200'">
+                          <div class="flex items-center gap-2">
+                              <i class="fas fa-temperature-high" [class]="isSelected ? 'text-green-600' : 'text-slate-500'"></i>
+                              <span class="font-semibold text-sm">{{machine.name}}</span>
+                          </div>
+                      </button>
+                    } @empty { <p class="text-sm text-slate-500 italic col-span-full">No hay secadoras disponibles.</p> }
+                  </div>
+                </div>
+                <!-- Other Items -->
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">Otros Artículos</label>
+                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    @for(service of otherSelfServiceItems(); track service.id) {
+                      @let isSelected = selectedServicesInOrderForm()[service.id] > 0;
+                      <div (click)="!isEditingOrder() && toggleServiceSelection(service.id)"
+                          class="relative rounded-lg p-3 border-2 h-full flex flex-col"
+                          [class]="isEditingOrder() ? 'cursor-default' : 'cursor-pointer'"
+                          [class]="isSelected ? 'bg-green-50 border-green-500' : 'bg-white border-slate-200 hover:border-green-400'">
+                          @if (isSelected) {
+                              <div class="absolute top-2 right-2 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                  <i class="fas fa-check fa-xs"></i>
+                              </div>
+                          }
+                          <div class="flex items-center gap-2 mb-2">
+                              <i class="fas {{service.icon}}" [class]="isSelected ? 'text-green-600' : 'text-slate-500'"></i>
+                              <h4 class="font-semibold text-sm">{{service.name}}</h4>
+                          </div>
+                          @if(isSelected) {
+                            <div class="mt-auto pt-2 border-t" (click)="$event.stopPropagation()">
+                              <label class="text-xs font-medium text-slate-600 mr-1">Cant:</label>
+                              <input type="number" min="1" step="1"
+                                    [value]="selectedServicesInOrderForm()[service.id]"
+                                    (input)="updateServiceQuantity(service.id, $event)"
+                                    [disabled]="isEditingOrder()"
+                                    class="w-full px-2 py-1 text-sm border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-100">
+                            </div>
+                          }
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+            
+            <div class="pt-4 border-t border-slate-200">
+              <div class="flex justify-between items-center">
+                  <label for="total" class="block text-lg font-medium text-slate-700">Total</label>
+                  <input type="text" id="total" name="total" [value]="'$' + computedTotalInOrderForm().toFixed(2)" readonly
+                        class="w-36 text-right text-2xl border-0 bg-transparent text-slate-800 font-bold focus:outline-none" />
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+            <button type="button" (click)="closeOrderModal()" class="py-2 px-4 bg-white border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              Cancelar
+            </button>
+            <button type="submit" [disabled]="orderForm.invalid || selectedClientIdInOrderForm() === 0 || computedTotalInOrderForm() === 0" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed">
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Client Modal -->
+  @if (showClientModal()) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity" (click)="closeClientModal()"></div>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl w-full max-w-md transform transition-all">
+        <div class="flex justify-between items-center p-5 border-b border-slate-200">
+          <h3 class="text-xl font-semibold text-slate-800">{{ clientModalTitle() }}</h3>
+          <button (click)="closeClientModal()" class="text-slate-400 hover:text-slate-600" aria-label="Cerrar modal"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <form (ngSubmit)="saveClient()" #clientForm="ngForm">
+          <div class="p-6 space-y-4">
+            <div>
+              <label for="clientName" class="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
+              <input type="text" id="clientName" name="clientName" required [(ngModel)]="currentClientForm().name" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+            <div>
+              <label for="clientPhone" class="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>
+              <input type="tel" id="clientPhone" name="clientPhone" required [(ngModel)]="currentClientForm().phone" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+            <div>
+              <label for="clientEmail" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <input type="email" id="clientEmail" [(ngModel)]="currentClientForm().email" name="clientEmail" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+            <div>
+              <label for="clientAddress" class="block text-sm font-medium text-slate-700 mb-1">Dirección</label>
+              <textarea id="clientAddress" name="clientAddress" [(ngModel)]="currentClientForm().address" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+            </div>
+          </div>
+          <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+            <button type="button" (click)="closeClientModal()" class="py-2 px-4 bg-white border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none">Cancelar</button>
+            <button type="submit" [disabled]="clientForm.invalid" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:bg-indigo-300">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+
+  <!-- Service Modal -->
+  @if (showServiceModal()) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity" (click)="closeServiceModal()"></div>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl w-full max-w-md transform transition-all">
+        <div class="flex justify-between items-center p-5 border-b border-slate-200">
+          <h3 class="text-xl font-semibold text-slate-800">{{ serviceModalTitle() }}</h3>
+          <button (click)="closeServiceModal()" class="text-slate-400 hover:text-slate-600" aria-label="Cerrar modal"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <form (ngSubmit)="saveService()" #serviceForm="ngForm">
+          <div class="p-6 space-y-4">
+            <div>
+              <label for="serviceName" class="block text-sm font-medium text-slate-700 mb-1">Nombre del Servicio</label>
+              <input type="text" id="serviceName" name="serviceName" required [(ngModel)]="currentServiceForm().name" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+            <div>
+              <label for="serviceIcon" class="block text-sm font-medium text-slate-700 mb-1">Icono (Font Awesome)</label>
+              <input type="text" id="serviceIcon" name="serviceIcon" required [(ngModel)]="currentServiceForm().icon" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+              <p class="text-xs text-slate-400 mt-1">Ej: fa-shirt, fa-user-tie</p>
+            </div>
+            <div>
+              <label for="serviceDescription" class="block text-sm font-medium text-slate-700 mb-1">Descripción</label>
+              <textarea id="serviceDescription" name="serviceDescription" required [(ngModel)]="currentServiceForm().description" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="servicePrice" class="block text-sm font-medium text-slate-700 mb-1">Precio ($)</label>
+                <input type="number" id="servicePrice" name="servicePrice" required min="0.01" step="0.01" [(ngModel)]="currentServiceForm().price" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+               <div>
+                <label for="pricingMethod" class="block text-sm font-medium text-slate-700 mb-1">Método de Cobro</label>
+                <select id="pricingMethod" name="pricingMethod" required [(ngModel)]="currentServiceForm().pricingMethod" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="per_kg">Por Kilo</option>
+                  <option value="per_item">Por Prenda</option>
+                  <option value="fixed">Fijo</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+            <button type="button" (click)="closeServiceModal()" class="py-2 px-4 bg-white border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none">Cancelar</button>
+            <button type="submit" [disabled]="serviceForm.invalid" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:bg-indigo-300">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Machine Modal -->
+  @if (showMachineModal()) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity" (click)="closeMachineModal()"></div>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl w-full max-w-md transform transition-all">
+        <div class="flex justify-between items-center p-5 border-b border-slate-200">
+          <h3 class="text-xl font-semibold text-slate-800">{{ machineModalTitle() }}</h3>
+          <button (click)="closeMachineModal()" class="text-slate-400 hover:text-slate-600" aria-label="Cerrar modal"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <form (ngSubmit)="saveMachine()" #machineForm="ngForm">
+          <div class="p-6 space-y-4">
+            <div>
+              <label for="machineName" class="block text-sm font-medium text-slate-700 mb-1">Nombre de la Máquina</label>
+              <input type="text" id="machineName" name="machineName" required [(ngModel)]="currentMachineForm().name" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+              <p class="text-xs text-slate-400 mt-1">Ej: Lavadora #4, Secadora Rápida</p>
+            </div>
+            <div>
+              <label for="machineType" class="block text-sm font-medium text-slate-700 mb-1">Tipo de Máquina</label>
+              <select id="machineType" name="machineType" required [(ngModel)]="currentMachineForm().type" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="washer">Lavadora</option>
+                <option value="dryer">Secadora</option>
+              </select>
+            </div>
+          </div>
+          <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+            <button type="button" (click)="closeMachineModal()" class="py-2 px-4 bg-white border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none">Cancelar</button>
+            <button type="submit" [disabled]="machineForm.invalid" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:bg-indigo-300">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+}
+
+<!-- Notification Sound -->
+<audio id="notificationSound" src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTSEUAAAAMAEdWMy5nb29nbGUuY29t/wMyxAAAAANIAAAAAAExBTUUzLjk5LjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV-"></audio>
