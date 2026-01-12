@@ -1,0 +1,5 @@
+{
+  "name": "Laundry Management",
+  "description": "A modern web application to manage laundry orders, allowing users to view, create, edit, and delete orders with real-time status tracking. Built with Angular and styled with Tailwind CSS.",
+  "requestFramePermissions": []
+}
