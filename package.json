@@ -1,28 +1,19 @@
 {
-  "name": "laundry-management",
+  "name": "lavanderia",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
+  "description": "Sistema para lavandería: encargos (dejar y recoger) y autoservicio, con caja y control de máquinas.",
   "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
-    "dev": "ng serve",
-    "build": "ng build",
-    "preview": "ng serve --configuration=production"
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "seed": "node --disable-warning=ExperimentalWarning server/seed.js",
+    "demo": "node --disable-warning=ExperimentalWarning server/seed.js --demo",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/**/*.test.js\""
   },
   "dependencies": {
-    "rxjs": "^7.8.2",
-    "@angular/compiler": "^21.0.0",
-    "@angular/platform-browser": "^21.0.0",
-    "@angular/core": "^21.0.0",
-    "@angular/forms": "^21.0.6",
-    "@angular/common": "^21.0.0",
-    "@angular/build": "^21.0.0",
-    "@angular/cli": "^21.0.0",
-    "@angular/compiler-cli": "^21.0.0",
-    "tailwindcss": "latest"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "express": "^5.1.0"
   }
 }
