@@ -76,10 +76,13 @@ Hecho y probado:
 - API completa con 14 pruebas pasando.
 - Recorrido en navegador (Chromium) en la nube: login → encargo nuevo → estados → cobrar y entregar → ticket; venta de autoservicio con cambio; vista de celular sin errores en consola.
 - Eduardo la instaló y la corrió en su laptop con Windows.
+- Recorrido completo en la laptop (ver `NOTAS-PRUEBAS.md`), incluida cancelación con reembolso y permisos de empleado.
+- Uso desde el celular por WiFi en la red local: funciona y se ve bien (lo probó Eduardo).
 
 Sin verificar:
 - Impresión real en impresora térmica de 80 mm (solo se vio el formato en pantalla).
-- Uso desde tablet o celular por WiFi en la red local.
+
+Pendiente de corregir (de `NOTAS-PRUEBAS.md`): el ticket llama "Anticipo" al pago hecho al entregar, y en encargos entregados sigue diciendo "Presente este ticket para recoger su ropa".
 
 Limitaciones conocidas:
 - `node:sqlite` aún se marca como experimental en Node 22/24; los scripts ocultan el aviso con `--disable-warning=ExperimentalWarning`.

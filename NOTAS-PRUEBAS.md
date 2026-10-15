@@ -12,6 +12,7 @@ Sesión de Claude en la laptop. `npm test`: 14/14 pasando.
 - **Caja**: cuadra. Efectivo $290 + tarjeta $209 = $499; encargos $272 + autoservicio $227.
 - **Cancelación (admin)** de E-00005, pagado con $90 en efectivo: exige motivo ("Escribe el motivo de la cancelación"), registra reembolso de -$90 y la caja baja a $409 (efectivo $200).
 - **Empleado (mostrador)**: no ve Ajustes; `#/ajustes` escrito a mano regresa a Inicio; en un encargo activo no aparece Cancelar. El servidor también bloquea (`requireAdmin` en cancelar, ajustes, servicios, máquinas y usuarios).
+- **Celular por WiFi (verificado por Eduardo)**: desde su teléfono, en la misma red, la app abre y se ve bien.
 - **Acceso por red local**: el servidor escucha en `0.0.0.0:3000`; desde `http://IP-DE-LA-LAPTOP:3000` carga, inicia sesión y opera igual que en localhost. El firewall de Windows ya permite Node.js (perfil Privado y Público).
 
 ### Hallazgos para corregir
@@ -26,7 +27,6 @@ Sesión de Claude en la laptop. `npm test`: 14/14 pasando.
 
 ### Sin verificar todavía
 
-- **Vista de celular en un teléfono real**: aquí no se pudo achicar la ventana de Chrome, y la CSP (`frame-ancestors 'none'`) impide meterla en un iframe. En la nube ya se había revisado la vista de celular sin errores en consola. Falta que Eduardo la abra en su teléfono.
 - **Impresión en impresora térmica de 80 mm.**
 
 ### Datos de prueba que quedaron en la BD
