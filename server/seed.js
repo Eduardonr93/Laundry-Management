@@ -2,6 +2,8 @@
 // Con --demo agrega además clientes, un empleado y pedidos de ejemplo.
 //   npm run seed      → solo catálogo (si está vacío)
 //   npm run demo      → catálogo + datos de demostración
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { loadConfig } from './config.js';
 import { openDb } from './db.js';
 import { hashPassword } from './auth.js';
@@ -136,7 +138,8 @@ function seedDemo(db) {
   }
 }
 
-const isMain = import.meta.url === `file://${process.argv[1]}`;
+// pathToFileURL convierte bien rutas de Windows (C:\...) y de Linux/Mac.
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 if (isMain) {
   const db = openDb(loadConfig().dbPath);
   seedCatalog(db);
